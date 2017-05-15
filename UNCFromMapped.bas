@@ -6,11 +6,14 @@
 '
 '   Author: Knuth Konrad 2013-2017
 '   Source: -
-'  Changed:
+'  Changed: 15.05.2017
+'           - #Break On to prevent console window property's menu issue
+'           - Application manifest added
 '------------------------------------------------------------------------------
 #Compile Exe ".\UNCFromMappedDrive.exe"
 #Dim All
 
+#Break On
 #Debug Error Off
 #Tools Off
 
@@ -18,7 +21,7 @@ DefLng A-Z
 
 %VERSION_MAJOR = 1
 %VERSION_MINOR = 0
-%VERSION_REVISION = 1
+%VERSION_REVISION = 2
 
 ' Version Resource information
 #Include ".\UNCFromMappedRes.inc"
