@@ -21,7 +21,7 @@ DefLng A-Z
 
 %VERSION_MAJOR = 1
 %VERSION_MINOR = 0
-%VERSION_REVISION = 2
+%VERSION_REVISION = 3
 
 ' Version Resource information
 #Include ".\UNCFromMappedRes.inc"
@@ -41,6 +41,33 @@ DefLng A-Z
 '------------------------------------------------------------------------------
 '==============================================================================
 
+Macro TextToClip(st)
+
+   MacroTemp hMem, pMem
+   Dim hMem    As Dword  'handle to globally allocated memory
+   Dim pMem    As Dword  'pointer to globally allocated memory
+
+   If OpenClipboard(0) Then
+      EmptyClipboard
+
+      hMem = GlobalAlloc( %GMEM_MOVEABLE Or %GMEM_DDESHARE, Len( st ) + 1 )
+
+      If hMem Then
+         pMem = GlobalLock( hMem )
+         If pMem Then
+            Poke$ pMem, st & $Nul
+            GlobalUnlock hMem
+            SetClipboardData %CF_Text, hMem
+         End If
+      End If 'pMem
+
+   CloseClipboard
+
+   End If 'OpenClipBoard
+
+End Macro 'TextToClip
+'------------------------------------------------------------------------------
+
 Function PBMain () As Long
 '------------------------------------------------------------------------------
 'Purpose  : Programm startup method
@@ -54,8 +81,11 @@ Function PBMain () As Long
 '   Source: -
 '  Changed: 14.02.2017
 '           - Code refactoring for Github publication
+'           04.06.2019
+'           - Copy the result to the clipboard for easier usage
 '------------------------------------------------------------------------------
-   Local sTemp As String, dwRet As Dword
+   Local sTemp As String, sResult As String
+   Local dwRet As Dword
 
    ' Application intro
    ConHeadline "UNCFromMappedDrive", %VERSION_MAJOR, %VERSION_MINOR, %VERSION_REVISION
@@ -70,7 +100,10 @@ Function PBMain () As Long
    sTemp = Command$
    sTemp = Remove$(sTemp, $Dq)
 
-   StdOut UNCPathFromDriveLetter(sTemp, dwRet)
+   sResult = UNCPathFromDrive(sTemp, dwRet)
+
+   Con.StdOut sResult
+   TextToClip(sResult)
 
    If dwRet <> %NO_ERROR Then
       Function = 255
@@ -79,10 +112,10 @@ Function PBMain () As Long
 End Function
 '------------------------------------------------------------------------------
 
-Function UNCPathFromDriveLetter(ByVal sPath As String, ByRef dwError As Dword, _
+Function UNCPathFromDrive(ByVal sPath As String, ByRef dwError As Dword, _
    Optional ByVal lDriveOnly As Long) As String
 '------------------------------------------------------------------------------
-'Purpose  : Returns a fully qulified UNC path location from a (mapped network)
+'Purpose  : Returns a fully qualified UNC path location from a (mapped network)
 '           drive letter/share
 '
 'Prereq.  : -
@@ -123,18 +156,18 @@ Function UNCPathFromDriveLetter(ByVal sPath As String, ByRef dwError As Dword, _
       If IsTrue(lDriveOnly) Then
 
          ' Display the UNC path.
-         UNCPathFromDriveLetter = Trim$(szRemoteName, Any $Nul & $WhiteSpace)
+         UNCPathFromDrive = Trim$(szRemoteName, Any $Nul & $WhiteSpace)
 
       Else
 
-         UNCPathFromDriveLetter = Trim$(szRemoteName, Any $Nul & $WhiteSpace) & sTemp
+         UNCPathFromDrive = Trim$(szRemoteName, Any $Nul & $WhiteSpace) & sTemp
 
       End If
 
    Else
 
       ' Return the original filename/path unaltered
-      UNCPathFromDriveLetter = sPath
+      UNCPathFromDrive = sPath
 
    End If
 
@@ -157,16 +190,16 @@ Sub ShowHelp
 '  Changed: -
 '------------------------------------------------------------------------------
 
-   StdOut "UNCFromMappedDrive"
-   StdOut "------------------"
-   StdOut "UNCFromMappedDrive converts a (local) drive mapping to a network share/drive to its UNC path notation."
-   StdOut "i.e. W:\MyData will be resolved to \\MyServer\MyNetworkShare\MyNetWorkData\MyData."
-   StdOut ""
-   StdOut "Usage:   UNCFromMappedDrive <mapped drive/folder>.
-   StdOut "i.e.     UNCFromMappedDrive W: (drive only)"
-   StdOut "         - or -"
-   StdOut "         UNCFromMappedDrive W:\MyData (drive & path)"
-   StdOut ""
+   Con.StdOut "UNCFromMappedDrive"
+   Con.StdOut "------------------"
+   Con.StdOut "UNCFromMappedDrive converts a (local) drive mapping to a network share/drive to its UNC path notation."
+   Con.StdOut "i.e. W:\MyData will be resolved to \\MyServer\MyNetworkShare\MyNetWorkData\MyData."
+   Con.StdOut ""
+   Con.StdOut "Usage:   UNCFromMappedDrive <mapped drive/folder>.
+   Con.StdOut "i.e.     UNCFromMappedDrive W: (drive only)"
+   Con.StdOut "         - or -"
+   Con.StdOut "         UNCFromMappedDrive W:\MyData (drive & path)"
+   Con.StdOut ""
 
 End Sub
 '---------------------------------------------------------------------------
